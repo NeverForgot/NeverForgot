@@ -26,10 +26,12 @@ pour le cahier des charges complet.
   l'envoi WhatsApp (§3.2, §3.3).
 - `src/trakist/services/admin` — tableau de bord pilote interne (§3.5) : taux
   de pertinence par pays/cohorte (§2.2) et santé des connecteurs.
-- `src/trakist/api` — API FastAPI : santé, entrepreneurs, signaux + boucle de
-  correction humaine, flux live (`/live-sessions`, `/live-sessions/{id}/comments`,
-  `/webhooks/payments/momo`, `/live-sessions/{id}/journal`, `/reservations/{id}/expirer`),
-  rapports (`POST /reports/generer`, `GET /businesses/{id}/reports`) et
+- `src/trakist/api` — API FastAPI : onboarding (`/businesses`,
+  `/businesses/{id}/offers`, `/businesses/{id}/channels`, §3.1), signaux +
+  boucle de correction humaine, flux live (`/live-sessions`,
+  `/live-sessions/{id}/comments`, `/webhooks/payments/momo`,
+  `/live-sessions/{id}/journal`, `/reservations/{id}/expirer`), rapports
+  (`POST /reports/generer`, `GET /businesses/{id}/reports`) et
   administration (`GET /admin/dashboard`).
 
 ## Démarrage local
@@ -98,3 +100,8 @@ pytest
   santé des connecteurs par pays/type/statut. Le suivi des coûts d'API par
   entrepreneur (§3.5) n'est pas couvert : aucune instrumentation de coût
   n'existe encore dans l'architecture.
+- Onboarding entrepreneur (§3.1) complet côté API : `POST /businesses/{id}/offers`
+  et `POST /businesses/{id}/channels` (404 si le `Business` n'existe pas).
+  Un `Channel` créé via l'API est considéré `connecte` par défaut — la
+  création représente l'étape « bot ajouté / compte lié » déjà effectuée par
+  l'entrepreneur, pas un état intermédiaire à confirmer séparément.
