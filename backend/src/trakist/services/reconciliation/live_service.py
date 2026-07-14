@@ -116,6 +116,23 @@ class LiveReconciliationService:
         self._db.refresh(reservation)
         return reservation
 
+    def expirer_toutes_dues(self, now: datetime | None = None) -> list[Reservation]:
+        """A appeler periodiquement (ordonnanceur interne, `scheduler.py`) :
+        expire toutes les reservations dont la fenetre de paiement est
+        depassee et libere le suivant de la file pour chacune."""
+        now = now or utcnow()
+        stmt = select(Reservation).where(
+            Reservation.statut == StatutReservation.PAIEMENT_DEMANDE,
+            Reservation.expires_at.is_not(None),
+            Reservation.expires_at <= now,
+        )
+        dues = list(self._db.execute(stmt).scalars())
+        return [
+            reservation
+            for reservation_id in [r.id for r in dues]
+            if (reservation := self.expirer_et_liberer(reservation_id, now)) is not None
+        ]
+
     def _reservation_active(self, live_session_id: uuid.UUID, article_ref: str) -> Reservation | None:
         stmt = (
             select(Reservation)

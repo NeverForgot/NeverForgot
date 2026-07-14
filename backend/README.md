@@ -39,6 +39,9 @@ pour le cahier des charges complet.
   `/webhooks/payments/momo`, `/live-sessions/{id}/journal`,
   `/reservations/{id}/expirer`), rapports (`POST /reports/generer`,
   `GET /businesses/{id}/reports`) et administration (`GET /admin/dashboard`).
+- `src/trakist/scheduler.py` — ordonnanceur interne (APScheduler) : déclenche
+  automatiquement la génération des rapports dus et l'expiration des
+  réservations live, câblé au cycle de vie de l'app dans `api/main.py`.
 
 ## Démarrage local
 
@@ -88,10 +91,9 @@ pytest
   spécifique ici faute de source fiable.
 - Le flux live -> réservation -> paiement -> confirmation/expiration est
   branché de bout en bout (service + API), testé avec 19 tests dont un test
-  d'intégration API complet (`tests/test_live_api.py`). L'expiration n'a pas
-  encore d'ordonnanceur périodique : `POST /reservations/{id}/expirer` doit
-  être appelé par un worker externe (cron, Celery beat, etc.) une fois la
-  fenêtre dépassée — non modélisé dans ce squelette.
+  d'intégration API complet (`tests/test_live_api.py`). `POST /reservations/{id}/expirer`
+  reste disponible pour un déclenchement manuel/externe, mais l'expiration
+  est désormais aussi automatique (voir `scheduler.py` ci-dessous).
 - Le montant de la transaction est un placeholder (`0.0`) : la réservation
   n'est pas encore reliée à un catalogue produit/prix, hors périmètre du §4
   actuel.
@@ -99,10 +101,20 @@ pytest
   seuil `Business.seuil_pertinence`, sur une fenêtre glissante (fin du
   dernier rapport → maintenant, plutôt qu'un alignement calendaire par
   fuseau horaire — `Business.fuseau_horaire` n'est pas encore exploité ici).
-  Aucun rapport vide n'est envoyé. Pas d'ordonnanceur automatique dans ce
-  squelette : `POST /reports/generer` doit être appelé par un worker externe
-  périodique (cron, Celery beat...), comme pour l'expiration des réservations
-  live.
+  Aucun rapport vide n'est envoyé. `POST /reports/generer` reste disponible
+  pour un déclenchement manuel/externe, mais la génération est désormais
+  aussi automatique (voir `scheduler.py` ci-dessous).
+- `src/trakist/scheduler.py` : ordonnanceur interne (APScheduler,
+  `BackgroundScheduler`) démarré/arrêté avec le cycle de vie de l'app
+  FastAPI (`lifespan` dans `api/main.py`). Deux jobs périodiques appellent
+  directement les services existants avec leur propre session DB :
+  génération des rapports dus (15 min par défaut) et expiration des
+  réservations live dues (1 min par défaut, cohérent avec la fenêtre de
+  paiement de 5 min — `DEFAULT_FENETRE_EXPIRATION`). Remplace le besoin d'un
+  worker externe (cron, Celery beat...) pour un déploiement mono-instance ;
+  configurable via `SCHEDULER_ENABLED` et les deux intervalles
+  (`config.py`) — à désactiver si le service passe multi-instance sans
+  ordonnanceur externe partagé, pour éviter un déclenchement en double.
 - `GET /admin/dashboard` (§3.5) : taux de pertinence par couple (pays,
   secteur) — une « cohorte » pilote n'a pas d'entité dédiée dans le modèle,
   le secteur en fait office (§2.2) — avec seuil d'alerte à 70% (§2.2), et

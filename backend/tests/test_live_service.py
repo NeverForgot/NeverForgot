@@ -94,3 +94,33 @@ def test_expiration_avant_la_fenetre_ne_fait_rien(
     resultat = service.expirer_et_liberer(comment.reservation.id, now=datetime.utcnow())
 
     assert resultat is None
+
+
+def test_expirer_toutes_dues_traite_plusieurs_articles_et_ignore_les_non_dues(
+    db_session: Session, live_session: LiveSession
+) -> None:
+    service = LiveReconciliationService(db_session, fenetre_expiration=timedelta(minutes=5))
+
+    robe = service.ajouter_commentaire(live_session.id, "marie", "Je le veux", "robe-001")
+    robe_suivante = service.ajouter_commentaire(live_session.id, "awa", "Moi aussi", "robe-001")
+    sac = service.ajouter_commentaire(live_session.id, "fatou", "Je prends", "sac-002")
+
+    now_apres_expiration = datetime.utcnow() + timedelta(minutes=6)
+    expirees = service.expirer_toutes_dues(now=now_apres_expiration)
+
+    assert {r.id for r in expirees} == {robe.reservation.id, sac.reservation.id}
+    db_session.refresh(robe.reservation)
+    db_session.refresh(sac.reservation)
+    db_session.refresh(robe_suivante.reservation)
+    assert robe.reservation.statut == StatutReservation.EXPIREE
+    assert sac.reservation.statut == StatutReservation.EXPIREE
+    assert robe_suivante.reservation.statut == StatutReservation.PAIEMENT_DEMANDE
+
+
+def test_expirer_toutes_dues_ne_fait_rien_si_aucune_reservation_due(
+    db_session: Session, live_session: LiveSession
+) -> None:
+    service = LiveReconciliationService(db_session, fenetre_expiration=timedelta(minutes=5))
+    service.ajouter_commentaire(live_session.id, "marie", "Je le veux", "robe-001")
+
+    assert service.expirer_toutes_dues(now=datetime.utcnow()) == []
