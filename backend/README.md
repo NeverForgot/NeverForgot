@@ -14,11 +14,14 @@ pour le cahier des charges complet.
   (fallback par règles en attendant le branchement d'un LLM).
 - `src/trakist/services/ingestion` — connecteurs (Facebook/WhatsApp, TikTok,
   recherche Google) et file de messages Redis Streams.
-- `src/trakist/services/reconciliation` — machine à états du module de vente live
-  (§3.4, §5.4).
+- `src/trakist/services/reconciliation` — machine à états pure (`state_machine.py`)
+  et service persistant (`live_service.py`) du module de vente live (§3.4, §5.4).
+- `src/trakist/services/payment` — client Request-to-Pay MTN MoMo / Orange Money
+  (stub en attendant les identifiants réels par pays, §5.2).
 - `src/trakist/services/notification` — livraison des rapports par WhatsApp (§3.3).
-- `src/trakist/api` — API FastAPI (santé, entrepreneurs, signaux + boucle de
-  correction humaine).
+- `src/trakist/api` — API FastAPI : santé, entrepreneurs, signaux + boucle de
+  correction humaine, et flux live (`/live-sessions`, `/live-sessions/{id}/comments`,
+  `/webhooks/payments/momo`, `/live-sessions/{id}/journal`, `/reservations/{id}/expirer`).
 
 ## Démarrage local
 
@@ -47,3 +50,12 @@ pytest
   qualité de classification cible.
 - Pas encore de migrations Alembic : `init_db()` crée les tables directement
   depuis les modèles SQLAlchemy pour le développement local.
+- Le flux live -> réservation -> paiement -> confirmation/expiration est
+  branché de bout en bout (service + API), testé avec 19 tests dont un test
+  d'intégration API complet (`tests/test_live_api.py`). L'expiration n'a pas
+  encore d'ordonnanceur périodique : `POST /reservations/{id}/expirer` doit
+  être appelé par un worker externe (cron, Celery beat, etc.) une fois la
+  fenêtre dépassée — non modélisé dans ce squelette.
+- Le montant de la transaction est un placeholder (`0.0`) : la réservation
+  n'est pas encore reliée à un catalogue produit/prix, hors périmètre du §4
+  actuel.
