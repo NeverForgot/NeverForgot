@@ -77,6 +77,26 @@ pytest
   (§2.2). Sans `ANTHROPIC_API_KEY` configurée, le squelette reste sur le
   fallback par règles (`RuleBasedFallbackClassifier`) — pratique pour les
   tests et le développement local sans clé API.
+- **`RuleBasedFallbackClassifier` est utilisable comme classification
+  principale du MVP à coût zéro**, pas seulement comme filet de secours :
+  aucune clé Anthropic n'est nécessaire pour faire tourner le pilote (à la
+  qualité près d'un LLM sur les tournures ambiguës, cf. §5.5.4). Deux
+  défauts corrigés pour le rendre fiable dans ce rôle :
+  - `GlossaryService.match_expressions`/`match_entries` matchaient sur
+    simple sous-chaîne : `"deal"` matchait à tort dans `"l'idéal"`, `"non"`
+    dans `"sinon"` — courant en français avec des expressions courtes d'une
+    syllabe. Corrigé par un match sur frontière de mot (regex lookaround).
+  - Le score de pertinence comptait toute expression du glossaire matchée à
+    poids égal, y compris les entrées `autre` (ex. `"gaou"` : moqueur, pas
+    une intention d'achat — cf. commentaire dans `seed_glossary.py`) : une
+    interpellation ou un signal négatif boostait le score au même titre
+    qu'une vraie intention d'achat. Corrigé par une pondération par
+    catégorie (`_POIDS_CATEGORIE_GLOSSAIRE` dans `classifier.py`) —
+    `intention_achat` compte, `autre` non.
+  Vérifié en tests et en live contre un Postgres réel avec le glossaire
+  seedé (`ok deal, je prends la robe wax` → 0.75 ; `sois pas gaou,
+  fais-moi un prix` → 0.0 ; `c'est l'ideal pour moi` → 0.0, aucun faux
+  positif sur `deal`).
 - Migrations Alembic en place (`alembic/`) : `alembic upgrade head` /
   `alembic downgrade base` testés de bout en bout contre un vrai Postgres,
   y compris la suppression explicite des types ENUM natifs au downgrade
