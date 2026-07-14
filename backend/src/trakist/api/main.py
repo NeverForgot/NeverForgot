@@ -11,6 +11,7 @@ from trakist.api.routes import (
     ingestion,
     live,
     offers,
+    products,
     reports,
     signals,
 )
@@ -40,6 +41,7 @@ app = FastAPI(title="Trakist API", version="0.1.0", lifespan=lifespan)
 app.include_router(health.router)
 app.include_router(businesses.router)
 app.include_router(offers.router)
+app.include_router(products.router)
 app.include_router(channels.router)
 app.include_router(ingestion.router)
 app.include_router(signals.router)

@@ -37,8 +37,9 @@ pour le cahier des charges complet.
   humaine (`POST /signals/{id}/feedback`, `POST /webhooks/whatsapp/feedback`),
   flux live (`/live-sessions`, `/live-sessions/{id}/comments`,
   `/webhooks/payments/momo`, `/live-sessions/{id}/journal`,
-  `/reservations/{id}/expirer`), rapports (`POST /reports/generer`,
-  `GET /businesses/{id}/reports`) et administration (`GET /admin/dashboard`).
+  `/reservations/{id}/expirer`), catalogue produit (`/businesses/{id}/products`,
+  §3.4), rapports (`POST /reports/generer`, `GET /businesses/{id}/reports`)
+  et administration (`GET /admin/dashboard`).
 - `src/trakist/scheduler.py` — ordonnanceur interne (APScheduler) : déclenche
   automatiquement la génération des rapports dus et l'expiration des
   réservations live, câblé au cycle de vie de l'app dans `api/main.py`.
@@ -90,13 +91,25 @@ pytest
   avant tout pilote, particulièrement pour le Bénin qui n'a aucune entrée
   spécifique ici faute de source fiable.
 - Le flux live -> réservation -> paiement -> confirmation/expiration est
-  branché de bout en bout (service + API), testé avec 19 tests dont un test
+  branché de bout en bout (service + API), testé avec 13 tests dont un test
   d'intégration API complet (`tests/test_live_api.py`). `POST /reservations/{id}/expirer`
   reste disponible pour un déclenchement manuel/externe, mais l'expiration
   est désormais aussi automatique (voir `scheduler.py` ci-dessous).
-- Le montant de la transaction est un placeholder (`0.0`) : la réservation
-  n'est pas encore reliée à un catalogue produit/prix, hors périmètre du §4
-  actuel.
+- Catalogue produit minimal (`models/product.py`, `POST`/`GET /businesses/{id}/products`) :
+  relie `Reservation.article_ref` (saisie libre pendant un live) à un prix
+  réel via `Product.reference` — pas de clé étrangère directe, un article
+  peut être commenté avant d'être catalogué. Si aucun `Product` ne
+  correspond à l'activation d'une réservation, le montant reste à `0.0`
+  (avec un log d'avertissement) plutôt que de bloquer le live en cours.
+  Référence non réutilisable deux fois pour un même `Business` (contrainte
+  unique `business_id` + `reference`, 409 sinon).
+- Commission de 5% sur les ventes live confirmées via TikTok (§6) : calculée
+  et enregistrée sur `Transaction.commission_montant` à la confirmation du
+  paiement (`confirmer_paiement`), uniquement si le canal du live est
+  `tiktok_own` — `None` (pas `0.0`) pour les autres rails/canaux, afin de
+  distinguer « pas de commission applicable » de « commission nulle
+  calculée ». Vérifié en tests et contre un Postgres réel (produit
+  catalogué à 15 000 XOF → commission de 750 XOF à la confirmation).
 - `ReportScheduler` regroupe les `Signal` au statut `nouveau` au-dessus du
   seuil `Business.seuil_pertinence`, sur une fenêtre glissante (fin du
   dernier rapport → maintenant, plutôt qu'un alignement calendaire par

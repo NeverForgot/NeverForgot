@@ -99,6 +99,10 @@ class Transaction(Base):
     devise: Mapped[str] = mapped_column(String(3), default="XOF")
     statut: Mapped[StatutTransaction] = mapped_column(Enum(StatutTransaction), default=StatutTransaction.INITIEE)
     reference_externe: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    # Renseigne a la confirmation, uniquement pour les lives TikTok (§6) :
+    # None tant que non applicable/non confirme, jamais 0.0 par defaut, pour
+    # distinguer "pas de commission sur ce rail" de "commission nulle calculee".
+    commission_montant: Mapped[float | None] = mapped_column(Numeric(12, 2), nullable=True)
     webhook_recu_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 

@@ -53,6 +53,7 @@ class Business(Base):
     country: Mapped["Country"] = relationship(back_populates="businesses")
     offers: Mapped[list["Offer"]] = relationship(back_populates="business")
     channels: Mapped[list["Channel"]] = relationship(back_populates="business")
+    products: Mapped[list["Product"]] = relationship(back_populates="business")
 
 
 class Offer(Base):

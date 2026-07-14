@@ -17,6 +17,7 @@ _SQLITE_COMPATIBLE_TABLES = [
     Business.__table__,
     Channel.__table__,
     "offers",
+    "products",
     "glossary_entries",
     "signals",
     "reports",
