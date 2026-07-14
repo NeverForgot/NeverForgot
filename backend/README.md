@@ -21,9 +21,13 @@ pour le cahier des charges complet.
 - `src/trakist/services/payment` — client Request-to-Pay MTN MoMo / Orange Money
   (stub en attendant les identifiants réels par pays, §5.2).
 - `src/trakist/services/notification` — livraison des rapports par WhatsApp (§3.3).
+- `src/trakist/services/reporting` — `ReportScheduler` : regroupe les `Signal`
+  dus par `Business` (quotidien/hebdo, seuil de pertinence) et déclenche
+  l'envoi WhatsApp (§3.2, §3.3).
 - `src/trakist/api` — API FastAPI : santé, entrepreneurs, signaux + boucle de
-  correction humaine, et flux live (`/live-sessions`, `/live-sessions/{id}/comments`,
-  `/webhooks/payments/momo`, `/live-sessions/{id}/journal`, `/reservations/{id}/expirer`).
+  correction humaine, flux live (`/live-sessions`, `/live-sessions/{id}/comments`,
+  `/webhooks/payments/momo`, `/live-sessions/{id}/journal`, `/reservations/{id}/expirer`)
+  et rapports (`POST /reports/generer`, `GET /businesses/{id}/reports`).
 
 ## Démarrage local
 
@@ -77,3 +81,11 @@ pytest
 - Le montant de la transaction est un placeholder (`0.0`) : la réservation
   n'est pas encore reliée à un catalogue produit/prix, hors périmètre du §4
   actuel.
+- `ReportScheduler` regroupe les `Signal` au statut `nouveau` au-dessus du
+  seuil `Business.seuil_pertinence`, sur une fenêtre glissante (fin du
+  dernier rapport → maintenant, plutôt qu'un alignement calendaire par
+  fuseau horaire — `Business.fuseau_horaire` n'est pas encore exploité ici).
+  Aucun rapport vide n'est envoyé. Pas d'ordonnanceur automatique dans ce
+  squelette : `POST /reports/generer` doit être appelé par un worker externe
+  périodique (cron, Celery beat...), comme pour l'expiration des réservations
+  live.

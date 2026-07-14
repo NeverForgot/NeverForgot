@@ -6,7 +6,7 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, Enum, ForeignKey, String, func
+from sqlalchemy import JSON, DateTime, Enum, Float, ForeignKey, String, func
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -40,9 +40,12 @@ class Business(Base):
     ville: Mapped[str] = mapped_column(String(255))
     country_code: Mapped[str] = mapped_column(ForeignKey("countries.code"))
     numero_paiement_momo: Mapped[str] = mapped_column(String(32))
+    numero_whatsapp: Mapped[str] = mapped_column(String(32))
     frequence_rapport: Mapped[FrequenceRapport] = mapped_column(
         Enum(FrequenceRapport), default=FrequenceRapport.DAILY
     )
+    # Seuil de pertinence configurable pour eviter la fatigue du rapport (§3.2).
+    seuil_pertinence: Mapped[float] = mapped_column(Float, default=0.5)
     fuseau_horaire: Mapped[str] = mapped_column(String(64), default="Africa/Porto-Novo")
     langue_communication: Mapped[str] = mapped_column(String(8), default="fr")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
@@ -58,7 +61,8 @@ class Offer(Base):
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     business_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("businesses.id"))
     libelle: Mapped[str] = mapped_column(String(255))
-    mots_cles: Mapped[list[str]] = mapped_column(ARRAY(String), default=list)
+    # JSON sous SQLite (tests) : ARRAY natif est specifique Postgres.
+    mots_cles: Mapped[list[str]] = mapped_column(ARRAY(String).with_variant(JSON(), "sqlite"), default=list)
     zone_geo_cible: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     business: Mapped["Business"] = relationship(back_populates="offers")

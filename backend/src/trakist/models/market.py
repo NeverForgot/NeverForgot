@@ -10,7 +10,7 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, Enum, ForeignKey, String, Text, func
+from sqlalchemy import JSON, DateTime, Enum, ForeignKey, String, Text, func
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -36,7 +36,10 @@ class Country(Base):
 
     code: Mapped[str] = mapped_column(String(2), primary_key=True)  # BJ | CI | SN
     langue_dominante: Mapped[str] = mapped_column(String(8), default="fr")
-    rails_paiement_disponibles: Mapped[list[str]] = mapped_column(ARRAY(String), default=list)
+    # JSON sous SQLite (tests) : ARRAY natif est specifique Postgres.
+    rails_paiement_disponibles: Mapped[list[str]] = mapped_column(
+        ARRAY(String).with_variant(JSON(), "sqlite"), default=list
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     glossary_entries: Mapped[list["GlossaryEntry"]] = relationship(back_populates="country")

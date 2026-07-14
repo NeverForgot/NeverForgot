@@ -6,7 +6,7 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, Enum, Float, ForeignKey, String, Text, func
+from sqlalchemy import JSON, DateTime, Enum, Float, ForeignKey, String, Text, func
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -41,7 +41,10 @@ class Signal(Base):
     auteur: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     langue_detectee: Mapped[LangueDetectee] = mapped_column(Enum(LangueDetectee))
-    expressions_argot_matchees: Mapped[list[str]] = mapped_column(ARRAY(String), default=list)
+    # JSON sous SQLite (tests) : ARRAY natif est specifique Postgres.
+    expressions_argot_matchees: Mapped[list[str]] = mapped_column(
+        ARRAY(String).with_variant(JSON(), "sqlite"), default=list
+    )
 
     score_pertinence: Mapped[float] = mapped_column(Float)
     score_confiance_linguistique: Mapped[float] = mapped_column(Float)
