@@ -11,6 +11,11 @@ class Settings(BaseSettings):
     redis_url: str = "redis://localhost:6379/0"
     whatsapp_api_token: str = ""
     whatsapp_phone_number_id: str = ""
+    anthropic_api_key: str = ""
+    # Haiku 4.5 par defaut : volume eleve, prompts courts, tache de
+    # classification peu complexe (§5.3). A remonter vers Sonnet si le taux
+    # de pertinence mesure en cohorte pilote (§2.2) le justifie.
+    classification_model: str = "claude-haiku-4-5"
 
 
 @lru_cache

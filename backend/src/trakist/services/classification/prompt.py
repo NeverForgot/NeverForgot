@@ -42,6 +42,8 @@ melange francais/anglais ou d'argot local.
 4. Donne un score_confiance_linguistique entre 0 et 1 : si une expression \
 n'est pas comprise avec certitude, baisse ce score plutot que de deviner \
 en silence.
+5. Liste les expressions d'argot du glossaire ci-dessus que tu identifies \
+dans le message.
 """
 
 

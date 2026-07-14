@@ -10,8 +10,10 @@ pour le cahier des charges complet.
   Channel, Signal, Report, LiveSession, LiveComment, Reservation, Transaction).
 - `src/trakist/services/market_context` — détection de langue/code-switching et
   service de glossaire par pays (§5.5).
-- `src/trakist/services/classification` — construction du prompt et classification
-  (fallback par règles en attendant le branchement d'un LLM).
+- `src/trakist/services/classification` — construction du prompt et classification.
+  `factory.get_classifier()` bascule automatiquement vers `AnthropicClassifier`
+  (sortie structurée via `client.messages.parse`) si `ANTHROPIC_API_KEY` est
+  configurée, sinon reste sur `RuleBasedFallbackClassifier`.
 - `src/trakist/services/ingestion` — connecteurs (Facebook/WhatsApp, TikTok,
   recherche Google) et file de messages Redis Streams.
 - `src/trakist/services/reconciliation` — machine à états pure (`state_machine.py`)
@@ -44,10 +46,14 @@ pytest
 - Les connecteurs Facebook/WhatsApp, TikTok et Google Search sont définis mais
   non branchés (`NotImplementedError`) : ils nécessitent des identifiants
   d'API réels, à configurer canal par canal (§5.2).
-- Le classifieur par défaut est une heuristique par mots-clés/glossaire, pas un
-  appel LLM — suffisant pour les tests et pour valider le flux de bout en bout,
-  à remplacer par un `Classifier` branché sur un modèle de langage pour la
-  qualité de classification cible.
+- Le classifieur LLM (`AnthropicClassifier`) est branché et testé (sortie
+  structurée validée par schéma, repli en statut « incertain » — jamais une
+  exception ni une supposition silencieuse — sur erreur API, timeout ou refus,
+  §5.5.4). Modèle par défaut : Haiku 4.5 (`classification_model` dans les
+  settings), à ajuster selon le taux de pertinence mesuré en cohorte pilote
+  (§2.2). Sans `ANTHROPIC_API_KEY` configurée, le squelette reste sur le
+  fallback par règles (`RuleBasedFallbackClassifier`) — pratique pour les
+  tests et le développement local sans clé API.
 - Pas encore de migrations Alembic : `init_db()` crée les tables directement
   depuis les modèles SQLAlchemy pour le développement local.
 - Le flux live -> réservation -> paiement -> confirmation/expiration est
