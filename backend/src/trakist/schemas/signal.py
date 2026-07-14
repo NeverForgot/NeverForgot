@@ -25,3 +25,7 @@ class MessageIngestCreate(BaseModel):
     texte: str
     auteur: str | None = None
     url_source: str | None = None
+
+
+class WhatsAppInboundMessage(BaseModel):
+    texte: str

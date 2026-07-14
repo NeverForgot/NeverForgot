@@ -22,7 +22,10 @@ pour le cahier des charges complet.
   et service persistant (`live_service.py`) du module de vente live (§3.4, §5.4).
 - `src/trakist/services/payment` — client Request-to-Pay MTN MoMo / Orange Money
   (stub en attendant les identifiants réels par pays, §5.2).
-- `src/trakist/services/notification` — livraison des rapports par WhatsApp (§3.3).
+- `src/trakist/services/notification` — livraison des rapports par WhatsApp
+  (§3.3) et `feedback_parser.py` : parse la réponse OUI/NON d'un
+  entrepreneur au bouton de retour rapide, pour alimenter la boucle de
+  correction humaine (§5.5.3).
 - `src/trakist/services/reporting` — `ReportScheduler` : regroupe les `Signal`
   dus par `Business` (quotidien/hebdo, seuil de pertinence) et déclenche
   l'envoi WhatsApp (§3.2, §3.3).
@@ -31,7 +34,8 @@ pour le cahier des charges complet.
 - `src/trakist/api` — API FastAPI : onboarding (`/businesses`,
   `/businesses/{id}/offers`, `/businesses/{id}/channels`, §3.1), ingestion
   (`POST /channels/{id}/messages`, §3.2), signaux + boucle de correction
-  humaine, flux live (`/live-sessions`, `/live-sessions/{id}/comments`,
+  humaine (`POST /signals/{id}/feedback`, `POST /webhooks/whatsapp/feedback`),
+  flux live (`/live-sessions`, `/live-sessions/{id}/comments`,
   `/webhooks/payments/momo`, `/live-sessions/{id}/journal`,
   `/reservations/{id}/expirer`), rapports (`POST /reports/generer`,
   `GET /businesses/{id}/reports`) et administration (`GET /admin/dashboard`).
@@ -110,3 +114,15 @@ pytest
   Un `Channel` créé via l'API est considéré `connecte` par défaut — la
   création représente l'étape « bot ajouté / compte lié » déjà effectuée par
   l'entrepreneur, pas un état intermédiaire à confirmer séparément.
+- Moteur de veille (§3.2) branché de bout en bout : `POST /channels/{id}/messages`
+  classifie un message contre chaque `Offer` du `Business` et crée le
+  `Signal` correspondant (meilleure correspondance conservée) — vérifié en
+  tests et contre un Postgres réel. C'est le point d'entrée qu'un
+  consommateur de la file Redis (`queue.py`) appellera une fois de vrais
+  connecteurs branchés (§5.2).
+- Boucle de correction humaine (§3.3, §5.5.3) complète : `POST /webhooks/whatsapp/feedback`
+  consomme la réponse OUI/NON d'un entrepreneur (format généré par
+  `send_feedback_prompt`, ex. `"OUI (ref <signal_id>)"`) et met à jour le
+  `Signal`. Comme pour le webhook de paiement, le format exact d'un webhook
+  WhatsApp Business réel (Meta Cloud API) n'est pas modélisé — seul le texte
+  du message, une fois extrait, est traité ici.
