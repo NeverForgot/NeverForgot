@@ -15,7 +15,9 @@ pour le cahier des charges complet.
   (sortie structurée via `client.messages.parse`) si `ANTHROPIC_API_KEY` est
   configurée, sinon reste sur `RuleBasedFallbackClassifier`.
 - `src/trakist/services/ingestion` — connecteurs (Facebook/WhatsApp, TikTok,
-  recherche Google) et file de messages Redis Streams.
+  recherche Google), file de messages Redis Streams, et `SignalDetectionService`
+  (§3.2) : transforme un message brut en `Signal` classifié contre chaque
+  `Offer` du `Business`, en gardant la meilleure correspondance.
 - `src/trakist/services/reconciliation` — machine à états pure (`state_machine.py`)
   et service persistant (`live_service.py`) du module de vente live (§3.4, §5.4).
 - `src/trakist/services/payment` — client Request-to-Pay MTN MoMo / Orange Money
@@ -27,12 +29,12 @@ pour le cahier des charges complet.
 - `src/trakist/services/admin` — tableau de bord pilote interne (§3.5) : taux
   de pertinence par pays/cohorte (§2.2) et santé des connecteurs.
 - `src/trakist/api` — API FastAPI : onboarding (`/businesses`,
-  `/businesses/{id}/offers`, `/businesses/{id}/channels`, §3.1), signaux +
-  boucle de correction humaine, flux live (`/live-sessions`,
-  `/live-sessions/{id}/comments`, `/webhooks/payments/momo`,
-  `/live-sessions/{id}/journal`, `/reservations/{id}/expirer`), rapports
-  (`POST /reports/generer`, `GET /businesses/{id}/reports`) et
-  administration (`GET /admin/dashboard`).
+  `/businesses/{id}/offers`, `/businesses/{id}/channels`, §3.1), ingestion
+  (`POST /channels/{id}/messages`, §3.2), signaux + boucle de correction
+  humaine, flux live (`/live-sessions`, `/live-sessions/{id}/comments`,
+  `/webhooks/payments/momo`, `/live-sessions/{id}/journal`,
+  `/reservations/{id}/expirer`), rapports (`POST /reports/generer`,
+  `GET /businesses/{id}/reports`) et administration (`GET /admin/dashboard`).
 
 ## Démarrage local
 
@@ -55,7 +57,10 @@ pytest
 
 - Les connecteurs Facebook/WhatsApp, TikTok et Google Search sont définis mais
   non branchés (`NotImplementedError`) : ils nécessitent des identifiants
-  d'API réels, à configurer canal par canal (§5.2).
+  d'API réels, à configurer canal par canal (§5.2). En attendant,
+  `POST /channels/{id}/messages` permet d'injecter un message manuellement
+  et de vérifier le moteur de veille de bout en bout (langue → glossaire →
+  classification → `Signal`), sans dépendre des connecteurs réels.
 - Le classifieur LLM (`AnthropicClassifier`) est branché et testé (sortie
   structurée validée par schéma, repli en statut « incertain » — jamais une
   exception ni une supposition silencieuse — sur erreur API, timeout ou refus,
