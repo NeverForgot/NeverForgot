@@ -24,10 +24,13 @@ pour le cahier des charges complet.
 - `src/trakist/services/reporting` — `ReportScheduler` : regroupe les `Signal`
   dus par `Business` (quotidien/hebdo, seuil de pertinence) et déclenche
   l'envoi WhatsApp (§3.2, §3.3).
+- `src/trakist/services/admin` — tableau de bord pilote interne (§3.5) : taux
+  de pertinence par pays/cohorte (§2.2) et santé des connecteurs.
 - `src/trakist/api` — API FastAPI : santé, entrepreneurs, signaux + boucle de
   correction humaine, flux live (`/live-sessions`, `/live-sessions/{id}/comments`,
-  `/webhooks/payments/momo`, `/live-sessions/{id}/journal`, `/reservations/{id}/expirer`)
-  et rapports (`POST /reports/generer`, `GET /businesses/{id}/reports`).
+  `/webhooks/payments/momo`, `/live-sessions/{id}/journal`, `/reservations/{id}/expirer`),
+  rapports (`POST /reports/generer`, `GET /businesses/{id}/reports`) et
+  administration (`GET /admin/dashboard`).
 
 ## Démarrage local
 
@@ -89,3 +92,9 @@ pytest
   squelette : `POST /reports/generer` doit être appelé par un worker externe
   périodique (cron, Celery beat...), comme pour l'expiration des réservations
   live.
+- `GET /admin/dashboard` (§3.5) : taux de pertinence par couple (pays,
+  secteur) — une « cohorte » pilote n'a pas d'entité dédiée dans le modèle,
+  le secteur en fait office (§2.2) — avec seuil d'alerte à 70% (§2.2), et
+  santé des connecteurs par pays/type/statut. Le suivi des coûts d'API par
+  entrepreneur (§3.5) n'est pas couvert : aucune instrumentation de coût
+  n'existe encore dans l'architecture.
