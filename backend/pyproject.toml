@@ -17,6 +17,7 @@ dependencies = [
     "redis>=5.0",
     "httpx>=0.27",
     "anthropic>=0.70",
+    "alembic>=1.13",
 ]
 
 [project.optional-dependencies]
