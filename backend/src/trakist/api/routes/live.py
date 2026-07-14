@@ -1,5 +1,4 @@
 import uuid
-from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
@@ -16,6 +15,7 @@ from trakist.schemas.live import (
     ReservationOut,
 )
 from trakist.services.reconciliation.live_service import LiveReconciliationService, ReconciliationError
+from trakist.timeutils import utcnow
 
 router = APIRouter(tags=["live"])
 
@@ -35,7 +35,7 @@ def end_live_session(live_session_id: uuid.UUID, db: Session = Depends(get_db)) 
     if live_session is None:
         raise HTTPException(status_code=404, detail="Live session introuvable")
     live_session.statut = StatutLive.TERMINEE
-    live_session.ended_at = datetime.utcnow()
+    live_session.ended_at = utcnow()
     db.commit()
     db.refresh(live_session)
     return live_session

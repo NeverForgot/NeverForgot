@@ -27,6 +27,7 @@ from sqlalchemy.orm import Session
 from trakist.models.business import Business, Channel, ChannelType, FrequenceRapport
 from trakist.models.signal import Report, Signal, StatutSignal
 from trakist.services.notification.whatsapp import ReportLine, WhatsAppClient
+from trakist.timeutils import as_naive_utc, utcnow
 
 _LABEL_CANAL = {
     ChannelType.FACEBOOK_GROUP: "Facebook",
@@ -49,7 +50,7 @@ class ReportScheduler:
         Parcourt tous les Business et genere/envoie un rapport pour ceux qui
         sont dus et ont au moins un signal a rapporter.
         """
-        now = now or datetime.utcnow()
+        now = now or utcnow()
         rapports_crees: list[Report] = []
         for business in self._db.execute(select(Business)).scalars():
             rapport = self._generer_si_du(business, now)
@@ -95,7 +96,7 @@ class ReportScheduler:
     def _est_du(business: Business, dernier_rapport: Report | None, now: datetime) -> bool:
         if dernier_rapport is None:
             return True
-        delta = now - dernier_rapport.envoye_at
+        delta = as_naive_utc(now) - as_naive_utc(dernier_rapport.envoye_at)
         seuil = (
             timedelta(days=1)
             if business.frequence_rapport == FrequenceRapport.DAILY

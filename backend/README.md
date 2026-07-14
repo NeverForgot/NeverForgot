@@ -126,3 +126,17 @@ pytest
   `Signal`. Comme pour le webhook de paiement, le format exact d'un webhook
   WhatsApp Business réel (Meta Cloud API) n'est pas modélisé — seul le texte
   du message, une fois extrait, est traité ici.
+- Deux bugs trouvés en vérifiant le flux complet contre un Postgres réel
+  (invisibles avec la seule suite pytest, qui tourne sur SQLite) :
+  - Les `logger.info(...)` des stubs WhatsApp/paiement (§5.2) n'apparaissaient
+    nulle part car aucun `logging.basicConfig` n'était appelé — le logger
+    racine reste à `WARNING` par défaut. Corrigé dans `api/main.py`.
+  - `ReportScheduler` et `LiveReconciliationService` comparaient/soustrayaient
+    des `datetime` : Postgres renvoie des valeurs *aware* pour une colonne
+    `DateTime(timezone=True)`, SQLite les renvoie toujours *naive* quel que
+    soit le flag — ce qui masquait le bug en tests tout en le faisant planter
+    (`TypeError: can't subtract offset-naive and offset-aware datetimes`) dès
+    qu'un `Business` avait un rapport ou une réservation déjà en base. Corrigé
+    via `trakist/timeutils.py` (`utcnow()` / `as_naive_utc()`), utilisé pour
+    toute comparaison entre une valeur générée en Python et une valeur relue
+    depuis la base.

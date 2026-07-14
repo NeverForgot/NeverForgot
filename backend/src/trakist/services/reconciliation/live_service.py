@@ -28,6 +28,7 @@ from trakist.models.live import (
     Transaction,
 )
 from trakist.services.payment.momo_orange import PaymentClient
+from trakist.timeutils import as_naive_utc, utcnow
 
 DEFAULT_FENETRE_EXPIRATION = timedelta(minutes=5)
 
@@ -81,7 +82,7 @@ class LiveReconciliationService:
             raise ReconciliationError("Reference de transaction inconnue pour cette reservation.")
 
         reservation.transaction.statut = StatutTransaction.CONFIRMEE
-        reservation.transaction.webhook_recu_at = datetime.utcnow()
+        reservation.transaction.webhook_recu_at = utcnow()
         reservation.statut = StatutReservation.CONFIRMEE
         reservation.live_comment.statut = StatutComment.CONFIRME
 
@@ -92,13 +93,13 @@ class LiveReconciliationService:
     def expirer_et_liberer(
         self, reservation_id: uuid.UUID, now: datetime | None = None
     ) -> Reservation | None:
-        now = now or datetime.utcnow()
+        now = now or utcnow()
         reservation = self._db.get(Reservation, reservation_id)
         if reservation is None:
             raise ReconciliationError("Reservation introuvable.")
         if reservation.statut != StatutReservation.PAIEMENT_DEMANDE:
             return None
-        if reservation.expires_at is None or now < reservation.expires_at:
+        if reservation.expires_at is None or as_naive_utc(now) < as_naive_utc(reservation.expires_at):
             return None
 
         reservation.statut = StatutReservation.EXPIREE
@@ -141,7 +142,7 @@ class LiveReconciliationService:
         return self._db.execute(stmt).scalars().first()
 
     def _activer(self, reservation: Reservation, business_id: uuid.UUID) -> None:
-        now = datetime.utcnow()
+        now = utcnow()
         reservation.statut = StatutReservation.PAIEMENT_DEMANDE
         reservation.expires_at = now + self._fenetre_expiration
         reservation.live_comment.statut = StatutComment.RESERVE
