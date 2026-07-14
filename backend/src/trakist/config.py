@@ -26,6 +26,13 @@ class Settings(BaseSettings):
     # Frequent par defaut : la fenetre d'expiration d'une reservation
     # (DEFAULT_FENETRE_EXPIRATION, live_service.py) est de 5 minutes.
     scheduler_intervalle_reservations_minutes: int = 1
+    # Verification provisoire des webhooks entrants (paiement MoMo/Orange,
+    # feedback WhatsApp) par secret partage (`api/security.py`), en
+    # attendant les signatures reelles par fournisseur une fois les
+    # identifiants par pays configures (§5.2). Vide par defaut = tous les
+    # webhooks rejetes (fail closed) : positionner explicitement pour
+    # activer, y compris en developpement local.
+    webhook_shared_secret: str = ""
 
 
 @lru_cache

@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from trakist.api.security import verify_webhook_secret
 from trakist.db import get_db
 from trakist.models.live import LiveSession, Reservation, StatutLive, Transaction
 from trakist.schemas.live import (
@@ -74,7 +75,9 @@ def expire_reservation(reservation_id: uuid.UUID, db: Session = Depends(get_db))
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
-@router.post("/webhooks/payments/momo", response_model=ReservationOut)
+@router.post(
+    "/webhooks/payments/momo", response_model=ReservationOut, dependencies=[Depends(verify_webhook_secret)]
+)
 def payment_webhook(payload: PaymentWebhookPayload, db: Session = Depends(get_db)) -> Reservation:
     stmt = select(Transaction).where(Transaction.reference_externe == payload.reference_externe)
     transaction = db.execute(stmt).scalars().first()

@@ -151,6 +151,19 @@ pytest
   `Signal`. Comme pour le webhook de paiement, le format exact d'un webhook
   WhatsApp Business réel (Meta Cloud API) n'est pas modélisé — seul le texte
   du message, une fois extrait, est traité ici.
+- Sécurité des webhooks entrants (`api/security.py`) : `POST /webhooks/payments/momo`
+  et `POST /webhooks/whatsapp/feedback` exigent un header `X-Webhook-Secret`
+  vérifié contre `WEBHOOK_SHARED_SECRET` (comparaison à temps constant).
+  **Fail closed** : secret non configuré (défaut) → tous les appels
+  rejetés (503), pas de webhook exploitable par defaut. Provisoire en
+  attendant la vérification de signature réelle par fournisseur (HMAC
+  MTN/Orange, vérification Meta Cloud API) une fois les identifiants par
+  pays disponibles (§5.2) — sans ça, n'importe qui connaissant une
+  référence de transaction pouvait jusqu'ici forger une confirmation de
+  paiement ou usurper le feedback WhatsApp d'un entrepreneur. Le reste de
+  l'API (`/businesses/*`, `/signals/*`, `/admin/*`...) n'a en revanche
+  toujours aucune authentification — à traiter dans un chantier séparé,
+  plus large (clé API par `Business` + protection des routes admin).
 - Deux bugs trouvés en vérifiant le flux complet contre un Postgres réel
   (invisibles avec la seule suite pytest, qui tourne sur SQLite) :
   - Les `logger.info(...)` des stubs WhatsApp/paiement (§5.2) n'apparaissaient

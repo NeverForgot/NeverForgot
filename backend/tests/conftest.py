@@ -1,4 +1,9 @@
+import os
 from datetime import datetime, timedelta
+
+# Doit etre positionne avant le premier import de trakist.config (lru_cache) :
+# les webhooks (api/security.py) sont fail-closed sans secret configure.
+os.environ.setdefault("WEBHOOK_SHARED_SECRET", "test-secret-not-for-prod")
 
 import pytest
 from sqlalchemy import create_engine

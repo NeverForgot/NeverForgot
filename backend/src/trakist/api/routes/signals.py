@@ -3,6 +3,7 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
+from trakist.api.security import verify_webhook_secret
 from trakist.db import get_db
 from trakist.models.signal import Signal, StatutSignal
 from trakist.schemas.signal import SignalFeedback, SignalOut, WhatsAppInboundMessage
@@ -38,7 +39,9 @@ def submit_feedback(signal_id: uuid.UUID, payload: SignalFeedback, db: Session =
     return _appliquer_feedback(db, signal_id, payload.pertinent)
 
 
-@router.post("/webhooks/whatsapp/feedback", response_model=SignalOut)
+@router.post(
+    "/webhooks/whatsapp/feedback", response_model=SignalOut, dependencies=[Depends(verify_webhook_secret)]
+)
 def whatsapp_feedback_webhook(payload: WhatsAppInboundMessage, db: Session = Depends(get_db)) -> Signal:
     """Consomme la reponse OUI/NON d'un entrepreneur au bouton de retour
     rapide envoye avec chaque rapport (§3.3), pour alimenter la boucle de
