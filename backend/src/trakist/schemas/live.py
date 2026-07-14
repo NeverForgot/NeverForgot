@@ -37,6 +37,7 @@ class TransactionOut(BaseModel):
     devise: str
     statut: StatutTransaction
     reference_externe: str | None
+    commission_montant: float | None
 
 
 class ReservationOut(BaseModel):

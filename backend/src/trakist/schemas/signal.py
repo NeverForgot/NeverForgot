@@ -19,3 +19,13 @@ class SignalOut(BaseModel):
 
 class SignalFeedback(BaseModel):
     pertinent: bool
+
+
+class MessageIngestCreate(BaseModel):
+    texte: str
+    auteur: str | None = None
+    url_source: str | None = None
+
+
+class WhatsAppInboundMessage(BaseModel):
+    texte: str

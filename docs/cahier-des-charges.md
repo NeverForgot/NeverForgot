@@ -220,7 +220,9 @@ C'est le point technique le plus sensible du projet, à traiter avec le plus de 
 ---
 
 ## 6. Modèle de monétisation
-(Inchangé par rapport à la v1) Abonnement mensuel en monnaie locale via mobile money, commission optionnelle sur les transactions confirmées via le module de réconciliation live. Tarification à valider avec les cohortes pilotes de chaque pays — le pouvoir d'achat et les habitudes de paiement diffèrent légèrement entre Bénin, Côte d'Ivoire et Sénégal, à ne pas supposer identiques.
+- **Veille commerciale (market tracking)** : abonnement mensuel à partir de 4 900 FCFA par canal connecté (Facebook, WhatsApp, TikTok, recherche Google — §5.2), en monnaie locale via mobile money. Au-delà d'un usage standard (volume de canaux/messages élevé), tarification sur devis.
+- **Réconciliation de ventes live** : commission de 5% sur les transactions confirmées via le module de réconciliation live TikTok (§3.4, §5.4) — prélevée uniquement sur un paiement effectivement confirmé, jamais sur une réservation expirée ou non payée.
+- Tarification à affiner avec les cohortes pilotes de chaque pays — le pouvoir d'achat et les habitudes de paiement diffèrent légèrement entre Bénin, Côte d'Ivoire et Sénégal, à ne pas supposer identiques.
 
 ---
 

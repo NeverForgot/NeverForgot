@@ -30,6 +30,18 @@ class Classifier(Protocol):
     ) -> ClassificationResult: ...
 
 
+#  Poids par categorie d'expression du glossaire (GlossaryCategorie) dans le
+#  score de pertinence : une expression 'autre' (ex. 'gaou' — moqueur, pas
+#  une intention d'achat, cf. seed_glossary.py) ne doit pas booster le score
+#  au meme titre qu'une expression 'intention_achat'.
+_POIDS_CATEGORIE_GLOSSAIRE = {
+    "intention_achat": 0.25,
+    "negociation": 0.15,
+    "question": 0.1,
+    "autre": 0.0,
+}
+
+
 class RuleBasedFallbackClassifier:
     """Classification par mots-cles + glossaire, sans appel LLM.
 
@@ -52,11 +64,15 @@ class RuleBasedFallbackClassifier:
         prompt = build_classification_prompt(texte_message, offer, country_code, self._glossary)
 
         langue_result = self._language_detector.detect(texte_message)
-        expressions_matchees = self._glossary.match_expressions(texte_message, country_code)
+        entrees_matchees = self._glossary.match_entries(texte_message, country_code)
+        expressions_matchees = [entry.expression for entry in entrees_matchees]
 
         texte_lower = texte_message.lower()
         mots_cles_matches = sum(1 for mc in offer.mots_cles if mc.lower() in texte_lower)
-        score_pertinence = min(1.0, 0.3 * mots_cles_matches + 0.2 * len(expressions_matchees))
+        poids_glossaire = sum(
+            _POIDS_CATEGORIE_GLOSSAIRE.get(entry.categorie, 0.0) for entry in entrees_matchees
+        )
+        score_pertinence = min(1.0, 0.3 * mots_cles_matches + poids_glossaire)
 
         # Confiance basse si le message est un melange de langues sans
         # qu'aucune expression du glossaire ne l'explique : signal a verifier

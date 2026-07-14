@@ -24,3 +24,17 @@ def test_classify_message_mixte_sans_argot_connu_baisse_la_confiance(glossary_se
     assert result.langue_detectee == Langue.MIXTE
     assert result.expressions_argot_matchees == []
     assert result.score_confiance_linguistique == 0.4
+
+
+def test_expression_hors_categorie_intention_achat_ne_booste_pas_le_score(
+    glossary_service: GlossaryService,
+) -> None:
+    """'wesh' (fixture conftest.py) est categorise 'autre' : une simple
+    interpellation ne doit pas etre traitee comme une intention d'achat."""
+    classifier = RuleBasedFallbackClassifier(glossary_service)
+    offer = OfferContext(libelle="Robe wax", mots_cles=["robe"], secteur="mode")
+
+    result = classifier.classify("wesh, ca va ?", offer, country_code="CI")
+
+    assert result.expressions_argot_matchees == ["wesh"]
+    assert result.score_pertinence == 0.0

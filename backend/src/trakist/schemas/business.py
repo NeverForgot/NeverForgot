@@ -11,7 +11,9 @@ class BusinessCreate(BaseModel):
     ville: str
     country_code: str
     numero_paiement_momo: str
+    numero_whatsapp: str
     frequence_rapport: FrequenceRapport = FrequenceRapport.DAILY
+    seuil_pertinence: float = 0.5
     fuseau_horaire: str = "Africa/Porto-Novo"
     langue_communication: str = "fr"
 
@@ -24,4 +26,6 @@ class BusinessOut(BaseModel):
     secteur: str
     ville: str
     country_code: str
+    numero_whatsapp: str
     frequence_rapport: FrequenceRapport
+    seuil_pertinence: float
